@@ -1,0 +1,1 @@
+export const createNewTestText : ()=>Promise<string> = async() => "Hello world this is termi-typer"
