@@ -1,6 +1,6 @@
 import process from "node:process"
 import chalk from "chalk"
-import { getTerminalWidth } from "./utils.js"
+import { colorCodeWord, getStringLengthWithoutColorFormat, getTerminalWidth } from "./utils.js"
 const log = (input: string | Buffer)=>{
     process.stdout.write(input)
 }
@@ -58,50 +58,61 @@ export class TyperProgram {
             log(" ".repeat(halfPadding) + wpmString)
         }
     }
+    private continueLine (list: string [], str: string): 1 | 0{
+        // 1 for continue and 0 for new line
+        const cols = getTerminalWidth()
+        let x: number = 0
+        for(let i:number = 0; i<list.length; i++){
+            x += getStringLengthWithoutColorFormat(list[i])
+            x += 1
+        }
+        x += getStringLengthWithoutColorFormat(str) + 1
+        if(x>=cols) return 0;
+        return 1
+    }
     private textDisplayWithColors ():void {
         let originalWord: string, userTypedWord: string
-        let displayText:string = ""
+        let displayTextArray:string[][] = [[]], tempString:string, displayArrayIndex: number = 0
+        let displayText: string = ""
         let i:number , j:number
-        for(i = 0; i<this.userTypeList.length; i++){
+        // previous words
+        for(i=0; i<this.currentWordIndex; i++){
             originalWord = this.testWordArray[i]
             userTypedWord = this.userTypeList[i]
-            for(j = 0; (j<originalWord.length && j<userTypedWord.length); j++){
-                if(originalWord[j]==userTypedWord[j]){
-                    displayText+=chalk.green(originalWord[j])
-                }else{
-                    displayText+=chalk.red.underline(originalWord[j])
-                }
-            }
-            if(userTypedWord.length<originalWord.length){
-                displayText+=chalk.red.underline(originalWord.slice(j))
-            }else if (userTypedWord.length>originalWord.length){
-                displayText+=chalk.red.underline(userTypedWord.slice(j))
-            }
-            displayText+=" "
-        }
-
-        if(this.userTypeList.length<this.testWordArray.length && this.currentWord!=""){
-            originalWord = this.testWordArray[this.currentWordIndex]
-            userTypedWord = this.currentWord
-            displayText+='['
-            for(j = 0; (j<originalWord.length && j<userTypedWord.length); j++){
-                if(originalWord[j]==userTypedWord[j]){
-                    displayText+=chalk.green(originalWord[j])
-                }else{
-                    displayText+=chalk.red.underline(originalWord[j])
-                }
-            }
-            if (userTypedWord.length>originalWord.length){
-                displayText+=chalk.red.underline(userTypedWord.slice(j))
+            tempString = colorCodeWord(userTypedWord, originalWord, true)
+            if(this.continueLine(displayTextArray[displayArrayIndex], tempString)==0){
+                displayArrayIndex+=1
+                displayTextArray.push([tempString])
             }else{
-                displayText+=chalk.grey(originalWord.slice(j))
+                displayTextArray[displayArrayIndex].push(tempString)
             }
-            displayText+="] "
         }
-        else if(this.userTypeList.length<this.testWordArray.length && this.currentWord==""){
-            displayText += chalk.grey("[" + this.testWordArray[this.currentWordIndex] + "] ")
+        if(this.currentWordIndex<this.testWordArray.length){
+            // current word
+            tempString = colorCodeWord(this.currentWord, this.testWordArray[this.currentWordIndex] , false)
+            if(this.continueLine(displayTextArray[displayArrayIndex], tempString)==0){
+                displayArrayIndex+=1
+                displayTextArray.push([tempString])
+            }else{
+                displayTextArray[displayArrayIndex].push(tempString)
+            }
+    
+            // remaining word
+            for(i=this.currentWordIndex+1; i<this.testWordArray.length; i++){
+                originalWord = this.testWordArray[i]
+                tempString = chalk.grey(originalWord)
+                if(this.continueLine(displayTextArray[displayArrayIndex], tempString)==0){
+                    displayArrayIndex+=1
+                    displayTextArray.push([tempString])
+                }else{
+                    displayTextArray[displayArrayIndex].push(tempString)
+                }
+            }
         }
-        displayText += chalk.grey(this.testWordArray.slice(this.currentWordIndex+1).join(" "))
+        for(i=0; i<displayTextArray.length; i++){
+            displayText += displayTextArray[i].join(" ")
+            displayText += "\n"
+        }
         log(displayText)
     }
     public screen (): void{
@@ -110,8 +121,7 @@ export class TyperProgram {
         this.displayTitle()
         cursorTo(2, 0)
         this.textDisplayWithColors()
-        cursorTo(10, 0)
-        clearLine()
+        cursorTo(15, 0)
         log(": "+this.currentWord)
     }
 }
