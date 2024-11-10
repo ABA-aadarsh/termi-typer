@@ -1,5 +1,5 @@
-import chalk from "chalk";
 import process from "node:process";
+import colorChalk, { ansiCodes } from "./Color.js";
 export const isAlphanumeric = (charCode: number): boolean => {
   return (
     (charCode >= 48 && charCode <= 57) || // 0-9
@@ -25,18 +25,18 @@ export const colorCodeWord = (word: string, referenceWord: string, isWordComplet
   let i: number = 0
   for (i = 0; (i < word.length && i < referenceWord.length); i++) {
     if (word[i] == referenceWord[i]) {
-      result += chalk.green(word[i])
+      result += colorChalk.green(word[i])
     } else {
-      result += chalk.red.underline(word[i])
+      result += colorChalk.red.underline(word[i])
     }
   }
   if (referenceWord.length < word.length) {
-    result += chalk.red.underline(word.slice(i))
+    result += colorChalk.red.underline(word.slice(i))
   } else if (referenceWord.length > word.length) {
     if (isWordComplete) {
-      result += chalk.red.underline(referenceWord.slice(i))
+      result += colorChalk.red(referenceWord.slice(i))
     } else {
-      result += chalk.grey(referenceWord.slice(i))
+      result += colorChalk.style(referenceWord[i], [ansiCodes.bgWhite, ansiCodes.black]) + colorChalk.grey(referenceWord.slice(i+1))
     }
   }
   return result
@@ -47,4 +47,8 @@ export const getStringLengthWithoutColorFormat = (str: string): number => {
   const ansi_regex = /\x1B\[\d+m/g
   result = (str.replace(ansi_regex, "")).length
   return result
+}
+
+export const log = (input: string | Buffer) : void => {
+  process.stdout.write(input)
 }

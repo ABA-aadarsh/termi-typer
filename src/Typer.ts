@@ -1,6 +1,6 @@
 import process from "node:process"
-import chalk from "chalk"
 import { colorCodeWord, getStringLengthWithoutColorFormat, getTerminalWidth } from "./utils.js"
+import colorChalk, { ansiCodes } from "./Color.js"
 const log = (input: string | Buffer)=>{
     process.stdout.write(input)
 }
@@ -32,8 +32,8 @@ export class TyperProgram {
     }
     public inputChar(ch : string):void{
         if(ch.length>=1){
-            if((ch==' ' || ch=='\r' || ch=='\n' || ch=='\b') && this.currentWord.length==0) return
-            else if((ch==' ' || ch=='\r' || ch=='\n') && this.currentWord.length!=0){
+            if((ch==' ' || ch=='\r' || ch=='\n' || ch=='\b' || ch == '\t') && this.currentWord.length==0) return
+            else if((ch==' ' || ch=='\r' || ch=='\n' || ch=='\t') && this.currentWord.length!=0){
                 if(this.currentWordIndex==this.testWordArray.length) return
                 this.userTypeList.push(this.currentWord)
                 this.currentWord = ""
@@ -100,7 +100,7 @@ export class TyperProgram {
             // remaining word
             for(i=this.currentWordIndex+1; i<this.testWordArray.length; i++){
                 originalWord = this.testWordArray[i]
-                tempString = chalk.grey(originalWord)
+                tempString = colorChalk.grey(originalWord)
                 if(this.continueLine(displayTextArray[displayArrayIndex], tempString)==0){
                     displayArrayIndex+=1
                     displayTextArray.push([tempString])
